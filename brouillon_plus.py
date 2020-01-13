@@ -33,8 +33,7 @@ suit(card) = card//13
 """
 
 import itertools as it
-import random as rd
-import time as time
+import random as rd\
 
 from catalog_plus import (RANKS, SUITS, CARDS_REPR, CARDS_NUM, CARDS, CARD_PAIRS,
                           FIVE_CARD_SETS, RIVERS_HOLE_CARDS, SEVEN_CHOOSE_FIVE)
@@ -70,7 +69,7 @@ def decr_indices(elt, lst):
 
 
 def histograms(hand):
-    # hand: [12, 45, 16, 3, 5]
+    # exmple : hand = [12, 45, 16, 3, 5]
     ranks = [card%13 for card in hand]
     suits = [card//13 for card in hand]
     histogram_ranks = [ranks.count(rk) for rk in range(13)]
@@ -95,7 +94,7 @@ def category(hist_ranks, hist_suits):
         return 1 # "pair"
     flush = 5 in hist_suits
     straight = is_in_list([1, 1, 1, 1, 1], hist_ranks)
-    if hist_ranks == [1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1]: # si as premiere carte de la suite
+    if hist_ranks == [1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1]: # si la 1ere carte de la suite est un As
         straight = True
     if flush:
         if straight:
@@ -128,10 +127,25 @@ def category_and_value(hand):
 
 
 def best_cat_val(seven_cards):
-    # seven_cards: [12, 45, 16, 3, 5, 17, 51]
+    # exaemple : seven_cards = [12, 45, 16, 3, 5, 17, 51]
     cat_vals = [category_and_value(hand) for hand
                 in list(it.combinations(seven_cards, 5))]
     return max(cat_vals)
+
+
+
+
+
+
+
+
+hc = numerical_cards("14s 7d")
+ft = numerical_cards("2d 4h 5d 8s")
+ftr = numerical_cards("2d 4h 5d 8s 6s")
+hc_1 = numerical_cards("13s 3d")
+hc_2 = numerical_cards("11s 12d")
+flp = numerical_cards("4s 5d 9s")
+
 
 
 def prob_win_turn_opponent_known(hole_cards_1, hole_cards_2, flop_turn):
@@ -147,11 +161,12 @@ def prob_win_turn_opponent_known(hole_cards_1, hole_cards_2, flop_turn):
             cat_val_2 = best_cat_val(hole_cards_2 + flop_turn + [river])
             if cat_val_1 > cat_val_2:
                 nb_win_1 += 1
+            elif cat_val_1 == cat_val_2:
+                nb_win_1 += 0.5
     return nb_win_1/nb_total
 
-#print(prob_win_turn_opponent_known(numerical_cards("14s 2d"), 
-#                                   numerical_cards("2s 7d"),
-#                                   numerical_cards("3s 4d 14c 14h")))
+
+#print(prob_win_turn_opponent_known(hc_1, hc_2, ft))
 
 
 def prob_win_river(hole_cards, flop_turn_river):
@@ -164,10 +179,11 @@ def prob_win_river(hole_cards, flop_turn_river):
             cat_val_2 = best_cat_val([card_1, card_2] + flop_turn_river)
             if cat_val_1 > cat_val_2:
                 nb_win_1 += 1
+            elif cat_val_1 == cat_val_2:
+                nb_win_1 += 0.5
     return nb_win_1/nb_total
 
-#print(prob_win_river(numerical_cards("14s 7d"), numerical_cards("2d 4h 5d 8s 12s")))
-#print(prob_win_river(numerical_cards("14s 14d"), numerical_cards("14h 13c 5d 8d 12s")))
+#print(prob_win_river(hc_2, ftr))
 
 
 def prob_win_turn(hole_cards, flop_turn):
@@ -182,59 +198,17 @@ def prob_win_turn(hole_cards, flop_turn):
             for card_1, card_2 in CARD_PAIRS:
                 if (not card_1 in known_cards and not card_2 in known_cards and
                     not river in [card_1, card_2]):
-    #                print(count)
                     cat_val_2 = best_cat_val([card_1, card_2, river] + flop_turn)
                     if cat_val_1 > cat_val_2:
                         nb_win += 1
+                    elif cat_val_1 == cat_val_2:
+                        nb_win += 0.5
                     count += 1
     return nb_win/nb_total
 
 
-def prob_win_turn_Monte_Carlo(hole_cards, flop_turn, proportion):
-    nb_total = int(46*45*44/2)
-    N = int(proportion*nb_total)
-    nb_win = 0
-    known_cards = hole_cards + flop_turn
-    count = 0
-    stop = False
-    for river in CARDS:
-        if not river in known_cards:
-            cat_val_1 = best_cat_val(known_cards + [river])
-            for card_1, card_2 in CARD_PAIRS:
-                if (not card_1 in known_cards and not card_2 in known_cards and
-                    not river in [card_1, card_2]):
-    #                print(count)
-                    cat_val_2 = best_cat_val([card_1, card_2, river] + flop_turn)
-                    if cat_val_1 > cat_val_2:
-                        nb_win += 1
-                    count += 1
-                if count == N:
-                    stop = True
-                    break
-            if stop:
-                break
-    return nb_win/N
-
-
-
-hc = numerical_cards("14s 7d")
-ft = numerical_cards("2d 4h 5d 8s")
-proportions = [k/10 for k in range(1, 11)]
-#results = [prob_win_turn_Monte_Carlo(hc, ft, p, False) for p in proportions]
-# p      prob with Monte Carlo (not random)
-# 0.1   [0.5287659200702679,
-# 0.2    0.4712340799297321,
-# 0.3    0.4595959595959596,
-# 0.4    0.47408871321914803,
-# 0.5    0.45573122529644267,
-# 0.6    0.46790367442541353,
-# 0.7    0.46353169997176646,
-# 0.8    0.4633838383838384,
-# 0.9    0.46291416581271655,
-# 1.0    0.45294246815985945]    
-
-
-def prob_win_turn_Monte_Carlo_random(hole_cards, flop_turn, proportion, with_replacement):
+# ERREUR : ~ 1 ou 2 %
+def prob_win_turn_Monte_Carlo(hole_cards, flop_turn, proportion=0.05, with_replacement=True):
     nb_total = int(46*45*44/2)
     N = int(proportion*nb_total)
     nb_win = 0
@@ -252,7 +226,11 @@ def prob_win_turn_Monte_Carlo_random(hole_cards, flop_turn, proportion, with_rep
         cat_val_2 = best_cat_val(hole_cards_2 + flop_turn + [river])
         if cat_val_1 > cat_val_2:
             nb_win += 1
+        elif cat_val_1 == cat_val_2:
+            nb_win += 0.5
     return nb_win/N
+
+#print(prob_win_turn_Monte_Carlo(hc, ft))
 
 
 def summary(results):
@@ -261,65 +239,94 @@ def summary(results):
     print("Max: ", max(results))
     
 
-#n = 100
-#results_rd = [0 for i in range(n)]
-#for i in range(n):
-#    results_rd[i] = prob_win_turn_Monte_Carlo_random(hc, ft, 0.02, True)
-#summary(results_rd)
-# Without replacement
-#    Mean:  0.47110989010988974
-#    Min:  0.432967032967033
-#    Max:  0.5043956043956044
-# With replacement
-#    Mean:  0.4698791208791205
-#    Min:  0.42637362637362636
-#    Max:  0.5032967032967033
 
-
-def prob_win_turn_app(hole_cards, flop_turn):
-    nb_total = int(46*45*44/2)
+def prob_win_flop_Monte_Carlo(hole_cards, flop, proportion=0.005, with_replacement=True):
+    nb_total = int(47*46*45*44/4)
+    N = int(proportion*nb_total)
     nb_win = 0
+    known_cards = hole_cards + flop
+    
+    possible_turns_rivers_hole_cards = [(list(tr), list(hc)) for tr in CARD_PAIRS for hc in CARD_PAIRS
+                                        if not hc[0] in known_cards and not hc[0] in tr
+                                        and not hc[1] in known_cards and not hc[1] in tr
+                                        and not tr[0] in known_cards and not tr[0] in hc
+                                        and not tr[1] in known_cards and not tr[1] in hc]
+    if with_replacement:
+        indices = rd.choices(range(nb_total), k = N)
+    else:
+        indices = rd.sample(range(nb_total), N)
     count = 0
-    for river, hole_cards_2 in RIVERS_HOLE_CARDS:
-        cat_val_1 = best_cat_val(hole_cards + flop_turn + [river])
-        cat_val_2 = best_cat_val(hole_cards_2 + flop_turn + [river])
+    for i in indices:
+        turn_river, hole_cards_2 = possible_turns_rivers_hole_cards[i]
+        cat_val_1 = best_cat_val(hole_cards + flop + turn_river)
+        cat_val_2 = best_cat_val(hole_cards_2 + flop + turn_river)
         if cat_val_1 > cat_val_2:
             nb_win += 1
+        elif cat_val_1 == cat_val_2:
+            nb_win += 0.5
+        if count%500 == 0:
+            print(round(count/N, 2))
         count += 1
-    return nb_win/nb_total
+    return nb_win/N
 
-# prob_win_turn(numerical_cards("14s 7d"), numerical_cards("2d 4h 5d 8s"))
-# 0.45294246815985945
-# prob_win_turn_app(numerical_cards("14s 7d"), numerical_cards("2d 4h 5d 8s"))
-# 0.5971234079929733
+#print(prob_win_flop_Monte_Carlo(hc_1, flp))
 
-hc_1 = numerical_cards("14s 14d")
-hc_2 = numerical_cards("11s 12d")
+
+def prob_win_flop_opponent_known_Monte_Carlo(hole_cards_1, hole_cards_2, flop,
+                                             proportion=0.005, with_replacement=True):
+    nb_total = int(45*44/2)
+    N = int(proportion*nb_total)
+    nb_win_1 = 0
+    known_cards = hole_cards_1 + hole_cards_2 + flop
+    possible_turns_rivers = [list(tr) for tr in CARD_PAIRS if not tr[0] in known_cards
+                             and not tr[1] in known_cards]
+    if with_replacement:
+        indices = rd.choices(range(nb_total), k = N)
+    else:
+        indices = rd.sample(range(nb_total), N)
+    count = 0
+    for i in indices:
+        turn_river = possible_turns_rivers[i]
+        cat_val_1 = best_cat_val(hole_cards_1 + flop + turn_river)
+        cat_val_2 = best_cat_val(hole_cards_2 + flop + turn_river)
+        if cat_val_1 > cat_val_2:
+            nb_win_1 += 1
+        elif cat_val_1 == cat_val_2:
+            nb_win_1 += 0.5
+        if count%500 == 0:
+            print(round(count/N, 2))
+        count += 1
+    return nb_win_1/N
+
+# prob_win_flop_opponent_known_Monte_Carlo(hc_1, hc_2, flp)
 
 def prob_win_preflop_opponent_known(hole_cards_1, hole_cards_2):
     nb_total = int(52*51*50*49*48/120)
     nb_win_1 = 0
     card_1_a, card_1_b = hole_cards_1
     card_2_a, card_2_b = hole_cards_2
-    count = 0
     possible_table_cards = [list(table_cards) for table_cards in FIVE_CARD_SETS if
                             not card_1_a in table_cards and
                             not card_1_b in table_cards and
                             not card_2_b in table_cards and
                             not card_2_b in table_cards]
+    count = 0
     for table_cards in possible_table_cards:
             cat_val_1 = best_cat_val(hole_cards_1 + table_cards)
             cat_val_2 = best_cat_val(hole_cards_2 + table_cards)
-            if compare_cat_val(cat_val_1, cat_val_2) == 1:
+            if cat_val_1 > cat_val_2:
                 nb_win_1 += 1
+            elif cat_val_1 == cat_val_2:
+                nb_win_1 += 0.5
             count += 1
-            print(count)
+            if count%1000 == 0:
+                print(count, 20*" ", nb_win_1/count)
     return nb_win_1/nb_total
 
 #print(prob_win_preflop_opponent_known(hc_1, hc_2))
 
 def prob_win_preflop_opponent_known_Monte_Carlo(hole_cards_1, hole_cards_2,
-                                                proportion, with_replacement):
+                                                proportion=0.005, with_replacement=True):
     nb_total = int(48*47*46*45*44/120)
     N = int(proportion*nb_total)
     nb_win_1 = 0
@@ -329,23 +336,26 @@ def prob_win_preflop_opponent_known_Monte_Carlo(hole_cards_1, hole_cards_2,
         indices = rd.sample(range(nb_total), N)
     card_1_a, card_1_b = hole_cards_1
     card_2_a, card_2_b = hole_cards_2
-    count = 0
     possible_table_cards = [list(table_cards) for table_cards in FIVE_CARD_SETS if
                             not card_1_a in table_cards and
                             not card_1_a in table_cards and
                             not card_2_b in table_cards and
                             not card_2_b in table_cards]
+    count = 0
     for i in indices:
         table_cards = possible_table_cards[i]
         cat_val_1 = best_cat_val(hole_cards_1 + table_cards)
         cat_val_2 = best_cat_val(hole_cards_2 + table_cards)
-        if compare_cat_val(cat_val_1, cat_val_2) == 1:
+        if cat_val_1 > cat_val_2:
             nb_win_1 += 1
+        elif cat_val_1 == cat_val_2:
+            nb_win_1 += 0.5
         count += 1
-        print(count)
+        if count%500 == 1:
+            print(round(count/N, 2))
     return nb_win_1/N
 
-#print(prob_win_preflop_opponent_known_Monte_Carlo(hc_1, hc_2, 0.005, False))
+#print(prob_win_preflop_opponent_known_Monte_Carlo(hc_1, hc_2))
 
 
 
