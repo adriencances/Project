@@ -16,18 +16,6 @@ Created on Wed Oct 23 15:46:45 2019
 """
 
 """
-Aller voir les hand evaluators.
-Sneeze7 evaluator
-
-
-REMARQUE :
-
-CARDS = [0, 1, ..., 51]
-0 : 2s
-1 : 3s
-
-order : s h c d
-
 rank(card) = card%13
 suit(card) = card//13
 """
@@ -35,22 +23,31 @@ suit(card) = card//13
 import itertools as it
 import random as rd\
 
-from catalog_plus import (RANKS, SUITS, CARDS_REPR, CARDS_NUM, CARDS, CARD_PAIRS,
-                          FIVE_CARD_SETS, RIVERS_HOLE_CARDS, SEVEN_CHOOSE_FIVE)
+from catalog_plus import CARDS_REPR, CARDS_NUM, CARDS, CARD_PAIRS, FIVE_CARD_SETS
 
 
 
 def numerical_cards(str_cards):
-    # cards: "13s 4c 5d"
+    """
+    Converts a set of cards from string encoding to numerical encoding.
+    Example : "13s 4c 5d" -> [11, 28, 42]
+    """
     return [CARDS_NUM[str_card] for str_card in str_cards.split()]
 
+
 def string_cards(num_cards):
+    """
+    Converts a set of cards from numerical encoding to string encoding.
+    Example : [11, 28, 42] -> "13s 4c 5d"
+    """
     return " ".join([CARDS_REPR[num_card] for num_card in num_cards])
 
 
-
-
 def first_sublist_index(pattern, lst):
+    """
+    Returns the minimal index at which the pattern can be found in the list if
+    the pattern is in the list, -1 otherwise.
+    """
     for index in range(len(lst)):
         if lst[index] == pattern[0] and lst[index:index + len(pattern)] == pattern:
             return index
@@ -58,6 +55,9 @@ def first_sublist_index(pattern, lst):
 
 
 def is_in_list(pattern, lst):
+    """
+    Returns True if and only if the pattern is in the list
+    """
     for index in range(len(lst)):
         if lst[index] == pattern[0] and lst[index:index + len(pattern)] == pattern:
             return True
@@ -65,11 +65,19 @@ def is_in_list(pattern, lst):
 
 
 def decr_indices(elt, lst):
+    """
+    Returns the list of indices at which the element can be found in the list,
+    sorted by decreasing order.
+    """
     return [i for i in range(len(lst) - 1, - 1, -1) if lst[i] == elt]
 
 
 def histograms(hand):
-    # exmple : hand = [12, 45, 16, 3, 5]
+    """
+    Returns the rank histogram and the suit histogram of a hand
+    (a set of five cards).
+    Example : [12, 45, 16, 3, 5] -> ([0, 0, 0, 2, 0, 1, 1, 0, 0, 0, 0, 0, 1], [3, 1, 0, 1])
+    """
     ranks = [card%13 for card in hand]
     suits = [card//13 for card in hand]
     histogram_ranks = [ranks.count(rk) for rk in range(13)]
@@ -78,6 +86,19 @@ def histograms(hand):
 
 
 def category(hist_ranks, hist_suits):
+    """
+    Returns an integer encoding the hand category the given pair of histograms
+    belongs to. Below is the list of possible types.
+    - high card: 0
+    - pair: 1
+    - double pair: 2
+    - three of a kind: 3
+    - straight: 4
+    - flush: 5
+    - full house: 6
+    - four of a kind: 7
+    - straight flush: 8
+    """
     four_kind = 4 in hist_ranks
     if four_kind:
         return 7 # "four of a kind"
@@ -94,7 +115,7 @@ def category(hist_ranks, hist_suits):
         return 1 # "pair"
     flush = 5 in hist_suits
     straight = is_in_list([1, 1, 1, 1, 1], hist_ranks)
-    if hist_ranks == [1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1]: # si la 1ere carte de la suite est un As
+    if hist_ranks == [1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1]: # if the straight starts by an Ace
         straight = True
     if flush:
         if straight:
@@ -104,37 +125,42 @@ def category(hist_ranks, hist_suits):
         return 4 # "straight"
     return 0 # "high card"
 
-#    "high card": 0,
-#    "pair": 1,
-#    "double pair": 2,
-#    "three of a kind": 3,
-#    "straight": 4,
-#    "flush": 5,
-#    "full house": 6,
-#    "four of a kind": 7,
-#    "straight flush": 8}
 
-def category_and_value(hand):
+def category_and_features(hand):
+    """
+    Returns the category and the value of the given hand.
+    The value is used to compare two hands of the same category.
+    It is the minimum amount of information necessary to compare two hands
+    of a given category.
+    """
     hist_ranks, hist_suits = histograms(hand)
     cat = category(hist_ranks, hist_suits)
-    val = tuple([rk + 2 for nb in [4, 3, 2, 1] for rk in decr_indices(nb, hist_ranks)])
+    feat = tuple([rk + 2 for nb in [4, 3, 2, 1] for rk in decr_indices(nb, hist_ranks)])
     if cat in [4, 8]: # ["straight", "straight flush"]
-        if 2 in val and 14 in val:
-            val = (5,)
+        if 2 in feat and 14 in feat:
+            feat = (5,)
         else:
-            val = (val[0],)
-    return cat, val
+            feat = (feat[0],)
+    return cat, feat
 
 
-def best_cat_val(seven_cards):
-    # exaemple : seven_cards = [12, 45, 16, 3, 5, 17, 51]
-    cat_vals = [category_and_value(hand) for hand
+def best_cat_feat(seven_cards):
+    """
+    Returns the category and the value of the best hand that can be found
+    in the given set of seven cards.
+    """
+    cat_feats = [category_and_features(hand) for hand
                 in list(it.combinations(seven_cards, 5))]
-    return max(cat_vals)
+    return max(cat_feats)
 
 
 
 
+# TEMPORARY
+def summary(results):
+    print("Mean: ", sum(results)/len(results))
+    print("Min: ", min(results))
+    print("Max: ", max(results))
 
 
 
@@ -148,35 +174,23 @@ flp = numerical_cards("4s 5d 9s")
 
 
 
-def prob_win_turn_opponent_known(hole_cards_1, hole_cards_2, flop_turn):
-    # hole_cards_1: [12, 27]
-    # hole_cards_1: [30, 1]
-    # flop_turn: [14, 19, 0, 50, 3]
-    nb_total = 44
-    nb_win_1 = 0
-    known_cards = hole_cards_1 + hole_cards_2 + flop_turn
-    for river in CARDS:
-        if not river in known_cards:
-            cat_val_1 = best_cat_val(hole_cards_1 + flop_turn + [river])
-            cat_val_2 = best_cat_val(hole_cards_2 + flop_turn + [river])
-            if cat_val_1 > cat_val_2:
-                nb_win_1 += 1
-            elif cat_val_1 == cat_val_2:
-                nb_win_1 += 0.5
-    return nb_win_1/nb_total
 
-
-#print(prob_win_turn_opponent_known(hc_1, hc_2, ft))
+"""
+OPPONENT CARDS NOT KNOWN
+"""
 
 
 def prob_win_river(hole_cards, flop_turn_river):
+    """
+    Probability that player 1 wins knowing his cards and the five cards on the table.
+    """
     nb_total = 45*22
     nb_win_1 = 0
     known_cards = hole_cards + flop_turn_river
-    cat_val_1 = best_cat_val(known_cards)
+    cat_val_1 = best_cat_feat(known_cards)
     for card_1, card_2 in CARD_PAIRS:
         if not card_1 in known_cards and not card_2 in known_cards:
-            cat_val_2 = best_cat_val([card_1, card_2] + flop_turn_river)
+            cat_val_2 = best_cat_feat([card_1, card_2] + flop_turn_river)
             if cat_val_1 > cat_val_2:
                 nb_win_1 += 1
             elif cat_val_1 == cat_val_2:
@@ -187,18 +201,22 @@ def prob_win_river(hole_cards, flop_turn_river):
 
 
 def prob_win_turn(hole_cards, flop_turn):
-    # Temps de calcul : ~ 23 secondes
+    """
+    Probability that player 1 wins knowing his cards, the flop, and the turn.
+    We do not use it given its quite long execution time (about 23 seconds).
+    """
+    # Execution time: ~ 23 seconds
     nb_total = int(46*45*44/2)
     nb_win = 0
     known_cards = hole_cards + flop_turn
     count = 0
     for river in CARDS:
         if not river in known_cards:
-            cat_val_1 = best_cat_val(known_cards + [river])
+            cat_val_1 = best_cat_feat(known_cards + [river])
             for card_1, card_2 in CARD_PAIRS:
                 if (not card_1 in known_cards and not card_2 in known_cards and
                     not river in [card_1, card_2]):
-                    cat_val_2 = best_cat_val([card_1, card_2, river] + flop_turn)
+                    cat_val_2 = best_cat_feat([card_1, card_2, river] + flop_turn)
                     if cat_val_1 > cat_val_2:
                         nb_win += 1
                     elif cat_val_1 == cat_val_2:
@@ -206,9 +224,13 @@ def prob_win_turn(hole_cards, flop_turn):
                     count += 1
     return nb_win/nb_total
 
+#print(prob_win_turn(hc, ft))
 
-# ERREUR : ~ 1 ou 2 %
-def prob_win_turn_Monte_Carlo(hole_cards, flop_turn, proportion=0.05, with_replacement=True):
+def prob_win_turn_Monte_Carlo(hole_cards, flop_turn, proportion=0.1, with_replacement=True):
+    """
+    Approximation of the probability that player 1 wins knowing his cards, the flop, and the turn.
+    """
+    # Execution time: ~ 5 seconds
     nb_total = int(46*45*44/2)
     N = int(proportion*nb_total)
     nb_win = 0
@@ -222,8 +244,8 @@ def prob_win_turn_Monte_Carlo(hole_cards, flop_turn, proportion=0.05, with_repla
         indices = rd.sample(range(nb_total), N)
     for i in indices:
         river, hole_cards_2 = possible_rivers_hole_cards[i]
-        cat_val_1 = best_cat_val(hole_cards + flop_turn + [river])
-        cat_val_2 = best_cat_val(hole_cards_2 + flop_turn + [river])
+        cat_val_1 = best_cat_feat(hole_cards + flop_turn + [river])
+        cat_val_2 = best_cat_feat(hole_cards_2 + flop_turn + [river])
         if cat_val_1 > cat_val_2:
             nb_win += 1
         elif cat_val_1 == cat_val_2:
@@ -233,14 +255,11 @@ def prob_win_turn_Monte_Carlo(hole_cards, flop_turn, proportion=0.05, with_repla
 #print(prob_win_turn_Monte_Carlo(hc, ft))
 
 
-def summary(results):
-    print("Mean: ", sum(results)/len(results))
-    print("Min: ", min(results))
-    print("Max: ", max(results))
-    
-
-
 def prob_win_flop_Monte_Carlo(hole_cards, flop, proportion=0.005, with_replacement=True):
+    """
+    Approximation of the probability that player 1 wins knowing his cards and the flop.
+    """
+    # Execution time: ~ 10 seconds
     nb_total = int(47*46*45*44/4)
     N = int(proportion*nb_total)
     nb_win = 0
@@ -258,75 +277,88 @@ def prob_win_flop_Monte_Carlo(hole_cards, flop, proportion=0.005, with_replaceme
     count = 0
     for i in indices:
         turn_river, hole_cards_2 = possible_turns_rivers_hole_cards[i]
-        cat_val_1 = best_cat_val(hole_cards + flop + turn_river)
-        cat_val_2 = best_cat_val(hole_cards_2 + flop + turn_river)
+        cat_val_1 = best_cat_feat(hole_cards + flop + turn_river)
+        cat_val_2 = best_cat_feat(hole_cards_2 + flop + turn_river)
         if cat_val_1 > cat_val_2:
             nb_win += 1
         elif cat_val_1 == cat_val_2:
             nb_win += 0.5
-        if count%500 == 0:
-            print(round(count/N, 2))
+#        if count%500 == 0:
+#            print(round(count/N, 2))
         count += 1
     return nb_win/N
 
 #print(prob_win_flop_Monte_Carlo(hc_1, flp))
 
 
-def prob_win_flop_opponent_known_Monte_Carlo(hole_cards_1, hole_cards_2, flop,
-                                             proportion=0.005, with_replacement=True):
+
+"""
+OPPONENT CARDS KNOWN
+"""
+
+
+def prob_win_all_known(hole_cards_1, hole_cards_2, flop_turn_river):
+    """
+    Returns 1 if player 1 wins, 0 if player 1 looses, 0.5 if it is a draw.
+    """
+    cat_val_1 = best_cat_feat(hole_cards_1 + flop_turn_river)
+    cat_val_2 = best_cat_feat(hole_cards_2 + flop_turn_river)
+    if cat_val_1 > cat_val_2:
+        return 1
+    if cat_val_1 == cat_val_2:
+        return 0.5
+    return 0
+    
+#print(prob_win_all_known(hc_2, hc_1, ftr))
+
+
+def prob_win_turn_opponent_known(hole_cards_1, hole_cards_2, flop_turn):
+    """
+    Probability that player 1 wins knowing his cards, the opponent's cards, the flop, and the turn.
+    """
+    nb_total = 44
+    nb_win = 0
+    known_cards = hole_cards_1 + hole_cards_2 + flop_turn
+    for river in CARDS:
+        if not river in known_cards:
+            cat_val_1 = best_cat_feat(hole_cards_1 + flop_turn + [river])
+            cat_val_2 = best_cat_feat(hole_cards_2 + flop_turn + [river])
+            if cat_val_1 > cat_val_2:
+                nb_win += 1
+            elif cat_val_1 == cat_val_2:
+                nb_win += 0.5
+    return nb_win/nb_total
+
+#print(prob_win_turn_opponent_known(hc_1, hc_2, ft))
+
+
+def prob_win_flop_opponent_known(hole_cards_1, hole_cards_2, flop):
+    """
+    Probability that player 1 wins knowing his cards, the opponent's cards, and the flop.
+    """
     nb_total = int(45*44/2)
-    N = int(proportion*nb_total)
     nb_win_1 = 0
     known_cards = hole_cards_1 + hole_cards_2 + flop
     possible_turns_rivers = [list(tr) for tr in CARD_PAIRS if not tr[0] in known_cards
                              and not tr[1] in known_cards]
-    if with_replacement:
-        indices = rd.choices(range(nb_total), k = N)
-    else:
-        indices = rd.sample(range(nb_total), N)
-    count = 0
-    for i in indices:
-        turn_river = possible_turns_rivers[i]
-        cat_val_1 = best_cat_val(hole_cards_1 + flop + turn_river)
-        cat_val_2 = best_cat_val(hole_cards_2 + flop + turn_river)
+
+    for turn_river in possible_turns_rivers:
+        cat_val_1 = best_cat_feat(hole_cards_1 + flop + turn_river)
+        cat_val_2 = best_cat_feat(hole_cards_2 + flop + turn_river)
         if cat_val_1 > cat_val_2:
             nb_win_1 += 1
         elif cat_val_1 == cat_val_2:
             nb_win_1 += 0.5
-        if count%500 == 0:
-            print(round(count/N, 2))
-        count += 1
-    return nb_win_1/N
-
-# prob_win_flop_opponent_known_Monte_Carlo(hc_1, hc_2, flp)
-
-def prob_win_preflop_opponent_known(hole_cards_1, hole_cards_2):
-    nb_total = int(52*51*50*49*48/120)
-    nb_win_1 = 0
-    card_1_a, card_1_b = hole_cards_1
-    card_2_a, card_2_b = hole_cards_2
-    possible_table_cards = [list(table_cards) for table_cards in FIVE_CARD_SETS if
-                            not card_1_a in table_cards and
-                            not card_1_b in table_cards and
-                            not card_2_b in table_cards and
-                            not card_2_b in table_cards]
-    count = 0
-    for table_cards in possible_table_cards:
-            cat_val_1 = best_cat_val(hole_cards_1 + table_cards)
-            cat_val_2 = best_cat_val(hole_cards_2 + table_cards)
-            if cat_val_1 > cat_val_2:
-                nb_win_1 += 1
-            elif cat_val_1 == cat_val_2:
-                nb_win_1 += 0.5
-            count += 1
-            if count%1000 == 0:
-                print(count, 20*" ", nb_win_1/count)
     return nb_win_1/nb_total
 
-#print(prob_win_preflop_opponent_known(hc_1, hc_2))
+#prob_win_flop_opponent_known(hc_1, hc_2, flp)
+
 
 def prob_win_preflop_opponent_known_Monte_Carlo(hole_cards_1, hole_cards_2,
                                                 proportion=0.005, with_replacement=True):
+    """
+    Probability that player 1 wins knowing his cards and the opponent's cards.
+    """
     nb_total = int(48*47*46*45*44/120)
     N = int(proportion*nb_total)
     nb_win_1 = 0
@@ -344,31 +376,63 @@ def prob_win_preflop_opponent_known_Monte_Carlo(hole_cards_1, hole_cards_2,
     count = 0
     for i in indices:
         table_cards = possible_table_cards[i]
-        cat_val_1 = best_cat_val(hole_cards_1 + table_cards)
-        cat_val_2 = best_cat_val(hole_cards_2 + table_cards)
+        cat_val_1 = best_cat_feat(hole_cards_1 + table_cards)
+        cat_val_2 = best_cat_feat(hole_cards_2 + table_cards)
         if cat_val_1 > cat_val_2:
             nb_win_1 += 1
         elif cat_val_1 == cat_val_2:
             nb_win_1 += 0.5
         count += 1
-        if count%500 == 1:
-            print(round(count/N, 2))
+#        if count%500 == 1:
+#            print(round(count/N, 2))
     return nb_win_1/N
 
 #print(prob_win_preflop_opponent_known_Monte_Carlo(hc_1, hc_2))
 
 
 
+"""
+General function
+"""
 
 
-
-
-
+def prob_win(nine_cards):
+    """
+    Returns the exact value or an approximation of the probability that player 1 wins.
+    """
+    hole_cards_1 = nine_cards[:2]
+    hole_cards_2 = nine_cards[2:4]
+    flop = nine_cards[4:7]
+    turn = nine_cards[7]
+    river = nine_cards[8]
+    # if the cards of the opponent are unknown
+    if 52 in hole_cards_2:
+        # if only the flop is on the table
+        if turn == 52:
+            return prob_win_flop_Monte_Carlo(hole_cards_1, flop)
+        # if only the flop and the turn is on the table
+        if river == 52:
+            return prob_win_turn_Monte_Carlo(hole_cards_1, flop + [turn])
+        # if all five cards are on the table
+        return prob_win_river(hole_cards_1, flop + [turn, river])
+    # if the cards of the opponent are known
+    # if no cards are on the table
+    if 52 in flop:
+        return prob_win_preflop_opponent_known_Monte_Carlo(hole_cards_1, hole_cards_2)
+    # if only the flop is on the table
+    if turn == 52:
+        return prob_win_flop_opponent_known(hole_cards_1, hole_cards_2, flop)
+    # if only the flop and the turn is on the table
+    if river == 52:
+        return prob_win_turn_opponent_known(hole_cards_1, hole_cards_2, flop + [turn])
+    # if all five cards are on the table
+    return prob_win_all_known(hole_cards_1, hole_cards_2, flop + [turn, river])
+    
 
 
 
 """
-tests
+MAKE UNITESTS
 """
         
 #high_card_1 = "5d 6s 12d 3h 13h"
@@ -425,43 +489,6 @@ tests
 #
 #print([rk + 2 for rk in decr_indices(1, hist_rks)])
 #print([rk + 2 for nb in [4, 3, 2, 1] for rk in decr_indices(nb, hist_rks)])
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
