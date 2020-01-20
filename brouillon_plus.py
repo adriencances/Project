@@ -1,18 +1,9 @@
 
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Nov 25 16:06:32 2019
-
-@author: Adrien CANCES
-"""
-
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 Created on Wed Oct 23 15:46:45 2019
 
-@author: Adrien CANCES
+@authors: Adrien CANCES and Florentin POUCIN
 """
 
 """
@@ -128,9 +119,9 @@ def category(hist_ranks, hist_suits):
 
 def category_and_features(hand):
     """
-    Returns the category and the value of the given hand.
-    The value is used to compare two hands of the same category.
-    It is the minimum amount of information necessary to compare two hands
+    Returns the category and the features of the given hand.
+    The features are used to compare two hands of the same category.
+    They are the minimum amount of information necessary to compare two hands
     of a given category.
     """
     hist_ranks, hist_suits = histograms(hand)
@@ -146,7 +137,7 @@ def category_and_features(hand):
 
 def best_cat_feat(seven_cards):
     """
-    Returns the category and the value of the best hand that can be found
+    Returns the category and the features of the best hand that can be found
     in the given set of seven cards.
     """
     cat_feats = [category_and_features(hand) for hand

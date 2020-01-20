@@ -3,7 +3,7 @@
 """
 Created on Wed Nov  6 01:21:12 2019
 
-@author: Adrien CANCES
+@authors: Adrien CANCES and Florentin POUCIN
 """
 
 import itertools as it
